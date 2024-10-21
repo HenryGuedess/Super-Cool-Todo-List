@@ -36,6 +36,11 @@ const TaskManager: React.FC = () => {
     return savedRate ? parseFloat(savedRate) : 0;
   });
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    priority: '',
+    category: '',
+    date: '',
+  });
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -46,13 +51,21 @@ const TaskManager: React.FC = () => {
   }, [hourlyRate]);
 
   const filteredTasks = useMemo(() => {
-    return {
-      today: tasks.filter(task => isToday(task.dueDate) && !task.completed),
-      tomorrow: tasks.filter(task => isTomorrow(task.dueDate) && !task.completed),
-      overdue: tasks.filter(task => isPast(task.dueDate) && !isToday(task.dueDate) && !task.completed),
-      completed: tasks.filter(task => task.completed),
+    const applyFilters = (tasks: Task[]) => {
+      return tasks.filter(task => 
+        (filters.priority === '' || task.priority === filters.priority) &&
+        (filters.category === '' || task.category === filters.category) &&
+        (filters.date === '' || format(task.dueDate, 'yyyy-MM-dd') === filters.date)
+      );
     };
-  }, [tasks]);
+
+    return {
+      today: applyFilters(tasks.filter(task => isToday(task.dueDate) && !task.completed)),
+      tomorrow: applyFilters(tasks.filter(task => isTomorrow(task.dueDate) && !task.completed)),
+      overdue: applyFilters(tasks.filter(task => isPast(task.dueDate) && !isToday(task.dueDate) && !task.completed)),
+      completed: applyFilters(tasks.filter(task => task.completed)),
+    };
+  }, [tasks, filters]);
 
   const addTask = () => {
     if (newTask.name && newTask.priority) {
@@ -261,19 +274,6 @@ const TaskManager: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">Your Family Needs You</h1>
         
-        <div className="mb-4">
-          <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-300">
-            Hourly Rate (USD)
-          </label>
-          <input
-            id="hourlyRate"
-            type="number"
-            value={hourlyRate}
-            onChange={(e) => setHourlyRate(parseFloat(e.target.value))}
-            className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white p-2"
-          />
-        </div>
-
         <div className="flex space-x-4 mb-4">
           <button
             onClick={() => setIsAddTaskModalOpen(true)}
@@ -283,12 +283,12 @@ const TaskManager: React.FC = () => {
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
           >
             <Download size={16} className="mr-2" />
             Export to CSV
           </button>
-          <label className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors flex items-center cursor-pointer">
+          <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-yellow-700 transition-colors flex items-center cursor-pointer">
             <Upload size={16} className="mr-2" />
             Import from CSV
             <input
@@ -319,6 +319,36 @@ const TaskManager: React.FC = () => {
               ))}
             </div>
           </div>
+
+          <div className="mb-4 flex space-x-2">
+            <select
+              value={filters.priority}
+              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
+              className="bg-gray-800 text-white rounded-md p-1 text-sm"
+            >
+              <option value="">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <select
+              value={filters.category}
+              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+              className="bg-gray-800 text-white rounded-md p-1 text-sm"
+            >
+              <option value="">All Categories</option>
+              {Array.from(new Set(tasks.map(task => task.category))).map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={filters.date}
+              onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+              className="bg-gray-800 text-white rounded-md p-1 text-sm"
+            />
+          </div>
+
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="tasks">
               {(provided) => (
