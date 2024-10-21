@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { format, isToday, isTomorrow, isPast } from 'date-fns';
-import { AlertCircle, Clock, Play, Square, Download, Upload, Trash2 } from 'lucide-react';
+import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
+import { AlertCircle, Clock, Play, Square, Download, Upload, Trash2, Filter } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -274,6 +274,19 @@ const TaskManager: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">Your Family Needs You</h1>
         
+        <div className="mb-4">
+          <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-300">
+            Hourly Rate (USD)
+          </label>
+          <input
+            id="hourlyRate"
+            type="number"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(parseFloat(e.target.value))}
+            className="mt-1 block rounded-md bg-gray-800 border-gray-700 text-white p-2"
+          />
+        </div>
+
         <div className="flex space-x-4 mb-4">
           <button
             onClick={() => setIsAddTaskModalOpen(true)}
@@ -283,7 +296,7 @@ const TaskManager: React.FC = () => {
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
           >
             <Download size={16} className="mr-2" />
             Export to CSV
@@ -320,7 +333,7 @@ const TaskManager: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-4 flex space-x-2">
+          <div className="mb-4 flex space-x-4">
             <select
               value={filters.priority}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
@@ -332,15 +345,15 @@ const TaskManager: React.FC = () => {
               <option value="high">High</option>
             </select>
             <select
-              value={filters.category}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="bg-gray-800 text-white rounded-md p-1 text-sm"
-            >
-              <option value="">All Categories</option>
-              {Array.from(new Set(tasks.map(task => task.category))).map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
+            value={filters.category}
+            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            className="bg-gray-800 text-white rounded-md p-1 text-sm"
+          >
+            <option value="">None</option>
+            {Array.from(new Set(tasks.map(task => task.category))).map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
             <input
               type="date"
               value={filters.date}
@@ -367,10 +380,10 @@ const TaskManager: React.FC = () => {
                               <div className="flex items-center mb-2">
                                 <h3 className="text-lg font-semibold mr-2">{task.name}</h3>
                                 {getPriorityIcon(task.priority)}
-                              </div>
-                              <p className="text-sm text-gray-400 mb-1">Due: {format(task.dueDate, 'yyyy-MM-dd')}</p>
-                              <p className="text-sm text-gray-400 mb-1">Category: {task.category}</p>
-                            </div>
+                                </div>
+                            <p className="text-sm text-gray-400 mb-1">Due: {format(task.dueDate, 'yyyy-MM-dd')}</p>
+                            {task.category && <p className="text-sm text-gray-400 mb-1">Category: {task.category}</p>}
+                          </div>
                             <div className="flex items-center space-x-4">
                               <div className="flex items-center space-x-2">
                                 <Clock className="text-blue-500" size={16} />
