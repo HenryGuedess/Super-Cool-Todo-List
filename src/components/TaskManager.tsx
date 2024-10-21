@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
-import { AlertCircle, Clock, Play, Square, Download, Upload, Trash2, Filter } from 'lucide-react';
+import { format, isToday, isTomorrow, isPast } from 'date-fns';
+import { AlertCircle, Clock, Play, Square, Download, Upload, Trash2 } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -11,7 +11,7 @@ interface Task {
   category: string;
   completed: boolean;
   timeSpent: number;
-  duration: number;
+  duration: number; // Duration in minutes
   timerRunning: boolean;
 }
 
@@ -41,6 +41,8 @@ const TaskManager: React.FC = () => {
     category: '',
     date: '',
   });
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null); // Track the currently active task
+  const [elapsedTime, setElapsedTime] = useState<number>(0); // Track elapsed time for the active task
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -94,11 +96,22 @@ const TaskManager: React.FC = () => {
 
   const toggleTimer = useCallback((taskId: string) => {
     setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, timerRunning: !task.timerRunning } : task
-      )
+      prevTasks.map(task => {
+        if (task.id === taskId) {
+          // If the task is being activated, stop any currently active task
+          if (activeTaskId && activeTaskId !== taskId) {
+            const previousTask = prevTasks.find(t => t.id === activeTaskId);
+            if (previousTask) {
+              previousTask.timerRunning = false; // Stop the previous task
+            }
+          }
+          setActiveTaskId(taskId); // Set the active task
+          return { ...task, timerRunning: !task.timerRunning };
+        }
+        return { ...task, timerRunning: false }; // Stop other tasks
+      })
     );
-  }, []);
+  }, [activeTaskId]);
 
   const toggleTaskCompletion = useCallback((taskId: string) => {
     setTasks(prevTasks =>
@@ -168,16 +181,28 @@ const TaskManager: React.FC = () => {
           return task;
         })
       );
+
+      // Update elapsed time for the active task
+      if (activeTaskId) {
+        const activeTask = tasks.find(task => task.id === activeTaskId);
+        if (activeTask) {
+          setElapsedTime(activeTask.timeSpent);
+        }
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTaskId, tasks]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const formatDuration = (minutes: number): string => {
+    return `${minutes}min`;
   };
 
   const calculateCost = (timeSpent: number) => {
@@ -270,9 +295,9 @@ const TaskManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-black text-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Move Faster, Don't Stop!</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-4">Move Faster, Don't Stop!</h1>
         
         <div className="mb-4">
           <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-300">
@@ -287,21 +312,28 @@ const TaskManager: React.FC = () => {
           />
         </div>
 
-        <div className="flex space-x-4 mb-4">
+        <div className="text-xl md:text-2xl font-bold mb-4">
+          Timer: {formatTime(elapsedTime)} - {activeTaskId ? formatDuration(tasks.find(task => task.id === activeTaskId)?.duration || 0) : '0min'} 
+          <span className="text-green-500">
+            {activeTaskId ? ` - $${calculateCost(elapsedTime)}` : ''}
+          </span>
+        </div>
+
+        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-4">
           <button
             onClick={() => setIsAddTaskModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-full md:w-auto"
           >
             Add New Task
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+            className="px-2 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors flex items-center w-full md:w-auto"
           >
             <Download size={16} className="mr-2" />
             Export to CSV
           </button>
-          <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
+          <label className="px-2 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors flex items-center w-full md:w-auto cursor-pointer">
             <Upload size={16} className="mr-2" />
             Import from CSV
             <input
@@ -313,15 +345,15 @@ const TaskManager: React.FC = () => {
           </label>
         </div>
 
-        <div className="bg-gray-900 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Tasks</h2>
+        <div className="bg-gray-900 rounded-lg shadow-lg p-4 md:p-6">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Tasks</h2>
           <div className="mb-4">
-            <div className="flex space-x-2">
+            <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
               {['today', 'tomorrow', 'overdue', 'completed'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as 'today' | 'tomorrow' | 'overdue' | 'completed')}
-                  className={`px-4 py-2 rounded-md ${
+                  className={`px-4 py-2 rounded-md w-full md:w-auto ${
                     activeTab === tab
                       ? 'bg-gray-800 text-white'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-800'
@@ -333,11 +365,11 @@ const TaskManager: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-4 flex space-x-4">
+          <div className="mb-4 flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
             <select
               value={filters.priority}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              className="bg-gray-800 text-white rounded-md p-1 text-sm"
+              className="bg-gray-800 text-white rounded-md p-1 text-sm w-full md:w-auto"
             >
               <option value="">All Priorities</option>
               <option value="low">Low</option>
@@ -345,20 +377,20 @@ const TaskManager: React.FC = () => {
               <option value="high">High</option>
             </select>
             <select
-            value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="bg-gray-800 text-white rounded-md p-1 text-sm"
-          >
-            <option value="">None</option>
-            {Array.from(new Set(tasks.map(task => task.category))).map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
+              value={filters.category}
+              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+              className="bg-gray-800 text-white rounded-md p-1 text-sm w-full md:w-auto"
+            >
+              <option value="">None</option>
+              {Array.from(new Set(tasks.map(task => task.category))).map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
             <input
               type="date"
               value={filters.date}
               onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-              className="bg-gray-800 text-white rounded-md p-1 text-sm"
+              className="bg-gray-800 text-white rounded-md p-1 text-sm w-full md:w-auto"
             />
           </div>
 
@@ -380,10 +412,10 @@ const TaskManager: React.FC = () => {
                               <div className="flex items-center mb-2">
                                 <h3 className="text-lg font-semibold mr-2">{task.name}</h3>
                                 {getPriorityIcon(task.priority)}
-                                </div>
-                            <p className="text-sm text-gray-400 mb-1">Due: {format(task.dueDate, 'yyyy-MM-dd')}</p>
-                            {task.category && <p className="text-sm text-gray-400 mb-1">Category: {task.category}</p>}
-                          </div>
+                              </div>
+                              <p className="text-sm text-gray-400 mb-1">Due: {format(task.dueDate, 'yyyy-MM-dd')}</p>
+                              {task.category && <p className="text-sm text-gray-400 mb-1">Category: {task.category}</p>}
+                            </div>
                             <div className="flex items-center space-x-4">
                               <div className="flex items-center space-x-2">
                                 <Clock className="text-blue-500" size={16} />
