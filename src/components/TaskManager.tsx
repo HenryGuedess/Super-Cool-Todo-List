@@ -272,7 +272,7 @@ const TaskManager: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Your Family Needs You</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Move Faster, Don't Stop!</h1>
         
         <div className="mb-4">
           <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-300">
