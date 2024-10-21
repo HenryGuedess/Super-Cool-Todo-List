@@ -301,7 +301,7 @@ const TaskManager: React.FC = () => {
             <Download size={16} className="mr-2" />
             Export to CSV
           </button>
-          <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-yellow-700 transition-colors flex items-center cursor-pointer">
+          <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
             <Upload size={16} className="mr-2" />
             Import from CSV
             <input
