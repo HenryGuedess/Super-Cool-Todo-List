@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
-import { AlertCircle, Clock, Play, Square, Download, Upload } from 'lucide-react';
+import { AlertCircle, Clock, Play, Square, Download, Upload, Trash2 } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -35,6 +35,7 @@ const TaskManager: React.FC = () => {
     const savedRate = localStorage.getItem('hourlyRate');
     return savedRate ? parseFloat(savedRate) : 0;
   });
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -93,6 +94,11 @@ const TaskManager: React.FC = () => {
       )
     );
   }, []);
+
+  const deleteTask = (taskId: string) => {
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    setDeleteTaskId(null);
+  };
 
   const playAlarm = () => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -253,7 +259,7 @@ const TaskManager: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Move Faster, Don't Stop!</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Your Family Needs You</h1>
         
         <div className="mb-4">
           <label htmlFor="hourlyRate" className="block text-sm font-medium text-gray-300">
@@ -264,7 +270,7 @@ const TaskManager: React.FC = () => {
             type="number"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(parseFloat(e.target.value))}
-            className="mt-1 block rounded-md bg-gray-800 border-gray-700 text-white p-2"
+            className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white p-2"
           />
         </div>
 
@@ -277,12 +283,12 @@ const TaskManager: React.FC = () => {
           </button>
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
           >
             <Download size={16} className="mr-2" />
             Export to CSV
           </button>
-          <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
+          <label className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors flex items-center cursor-pointer">
             <Upload size={16} className="mr-2" />
             Import from CSV
             <input
@@ -357,6 +363,12 @@ const TaskManager: React.FC = () => {
                                 onChange={() => toggleTaskCompletion(task.id)}
                                 className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                               />
+                              <button
+                                className="p-1 rounded-full hover:bg-gray-700 transition-colors"
+                                onClick={() => setDeleteTaskId(task.id)}
+                              >
+                                <Trash2 size={16} className="text-red-500" />
+                              </button>
                             </div>
                           </div>
                         </li>
@@ -452,6 +464,29 @@ const TaskManager: React.FC = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Add Task
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {deleteTaskId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-gray-900 p-6 rounded-lg w-full max-w-md">
+              <h2 className="text-2xl font-bold mb-4">Delete Task</h2>
+              <p className="mb-4">Are you sure you want to delete this task?</p>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setDeleteTaskId(null)}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteTask(deleteTaskId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Delete
                 </button>
               </div>
             </div>
