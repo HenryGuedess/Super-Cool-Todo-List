@@ -281,7 +281,7 @@ const TaskManager: React.FC = () => {
             name,
             priority: priority as 'low' | 'medium' | 'high',
             category,
-            dueDate: new Date(dueDate),
+            dueDate: new Date(dueDate), // Ensure the date is in the correct format
             duration: parseInt(duration.split(':')[0]) * 60 + parseInt(duration.split(':')[1]),
             timeSpent: parseInt(timeSpent.split(':')[0]) * 3600 + parseInt(timeSpent.split(':')[1]) * 60 + parseInt(timeSpent.split(':')[2]),
             completed: false,
