@@ -273,7 +273,7 @@ const TaskManager: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
-        const lines = content.split('\n');
+        const lines = content.split('\n').filter(line => line.trim() !== ''); // Remove linhas em branco
         const newTasks: Task[] = lines.slice(1).map(line => {
           const [name, priority, category, dueDate, duration, timeSpent] = line.split(',');
           return {
@@ -281,14 +281,20 @@ const TaskManager: React.FC = () => {
             name,
             priority: priority as 'low' | 'medium' | 'high',
             category,
-            dueDate: new Date(dueDate), // Ensure the date is in the correct format
+            dueDate: new Date(dueDate), // Certifique-se de que a data está no formato correto
             duration: parseInt(duration.split(':')[0]) * 60 + parseInt(duration.split(':')[1]),
             timeSpent: parseInt(timeSpent.split(':')[0]) * 3600 + parseInt(timeSpent.split(':')[1]) * 60 + parseInt(timeSpent.split(':')[2]),
             completed: false,
             timerRunning: false
           };
         });
-        setTasks(prevTasks => [...prevTasks, ...newTasks]);
+
+        // Atualiza o estado das tarefas
+        setTasks(prevTasks => {
+          const updatedTasks = [...prevTasks, ...newTasks];
+          localStorage.setItem('tasks', JSON.stringify(updatedTasks)); // Salva as tarefas no localStorage
+          return updatedTasks;
+        });
       };
       reader.readAsText(file);
     }
