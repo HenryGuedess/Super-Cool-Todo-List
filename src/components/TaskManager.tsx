@@ -365,7 +365,11 @@ const TaskManager: React.FC = () => {
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-800'
                   }`}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)} 
+                  {/* Add notification count */}
+                  <span className="ml-2 text-sm text-gray-400">
+                    ({filteredTasks[tab].length})
+                  </span>
                 </button>
               ))}
             </div>
