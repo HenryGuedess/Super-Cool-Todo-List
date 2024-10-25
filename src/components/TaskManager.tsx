@@ -222,14 +222,14 @@ const TaskManager: React.FC = () => {
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) {
-      return;
+      return; // Se não houver destino, não faz nada
     }
 
-    const items = Array.from(tasks);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const items = Array.from(tasks); // Cria uma cópia do estado atual das tarefas
+    const [reorderedItem] = items.splice(result.source.index, 1); // Remove a tarefa da posição original
+    items.splice(result.destination.index, 0, reorderedItem); // Insere a tarefa na nova posição
 
-    setTasks(items);
+    setTasks(items); // Atualiza o estado com a nova ordem das tarefas
   };
 
   const exportToCSV = () => {
